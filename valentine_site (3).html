@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Be My Valentine</title>
+<style>
+  body {
+    font-family: system-ui, Arial, sans-serif;
+    text-align: center;
+    background: linear-gradient(135deg,#ffdde1,#ee9ca7);
+    min-height: 100vh;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .card{background:white;padding:30px;border-radius:20px;max-width:420px;box-shadow:0 20px 50px rgba(0,0,0,.2)}
+  h1{margin-top:0}
+  input{padding:10px;margin:8px;width:90%;border-radius:10px;border:1px solid #ccc}
+  button{padding:12px 20px;margin:10px;border:none;border-radius:12px;font-size:18px;cursor:pointer}
+  #yes{background:#ff4d6d;color:white}
+  #no{background:#444;color:white;position:relative}
+  #linkBox{display:none;margin-top:15px}
+  canvas{position:fixed;inset:0;pointer-events:none}
+</style>
+</head>
+<body>
+<canvas id="confetti"></canvas>
+<div class="card" id="setup">
+  <h1>Create Valentine Link ❤️</h1>
+  <input id="from" placeholder="Your name" />
+  <input id="to" placeholder="Valentine's name" />
+  <br>
+  <button onclick="makeLink()">Generate Link</button>
+  <div id="linkBox">
+    <p>Send this:</p>
+    <input id="link" readonly />
+    <button onclick="copyLink()">Copy</button>
+  </div>
+</div>
+
+<div class="card" id="ask" style="display:none">
+  <h1 id="question"></h1>
+  <button id="yes">Yes</button>
+  <button id="no">No</button>
+</div>
+
+<script>
+const params=new URLSearchParams(location.search);
+const from=params.get('from');
+const to=params.get('to');
+
+if(from&&to){
+  document.getElementById('setup').style.display='none';
+  const ask=document.getElementById('ask');
+  ask.style.display='block';
+  document.getElementById('question').textContent=`${to}, will you be my valentine?`;
+}
+
+function makeLink(){
+  const from=document.getElementById('from').value.trim();
+  const to=document.getElementById('to').value.trim();
+  if(!from||!to)return alert('enter names');
+  const url=`${location.origin}${location.pathname}?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+  document.getElementById('linkBox').style.display='block';
+  document.getElementById('link').value=url;
+}
+function copyLink(){navigator.clipboard.writeText(document.getElementById('link').value)}
+
+// NO BUTTON CHAOS
+const no=document.getElementById('no');
+if(no){
+let stage=0;
+const texts=["No","Nope","Try again!","Not happening!","Just say yes!"];
+no.onclick=()=>{
+  stage++;
+  if(stage>=texts.length){
+    no.style.display='none';
+    return;
+  }
+  no.textContent=texts[stage];
+  move(no);
+};
+}
+function move(btn){
+  const pad=20;
+  const rect=btn.getBoundingClientRect();
+  const maxX=window.innerWidth-rect.width-pad;
+  const maxY=window.innerHeight-rect.height-pad;
+  const minX=pad;
+  const minY=pad;
+  const x=Math.random()*(maxX-minX)+minX;
+  const y=Math.random()*(maxY-minY)+minY;
+  btn.style.position='fixed';
+  btn.style.left=x+'px';
+  btn.style.top=y+'px';
+}
+
+// YES
+const yes=document.getElementById('yes');
+if(yes){
+yes.onclick=()=>{
+  document.getElementById('question').textContent=`${from} ❤️ ${to}`;
+  no&& (no.style.display='none');
+  confetti();
+};
+}
+
+// CONFETTI
+const canvas=document.getElementById('confetti');
+const ctx=canvas.getContext('2d');
+resize();window.onresize=resize;
+function resize(){canvas.width=innerWidth;canvas.height=innerHeight}
+let pieces=[];
+function confetti(){
+  for(let i=0;i<200;i++)pieces.push({x:Math.random()*canvas.width,y:-20,vy:2+Math.random()*3,size:5+Math.random()*8,color:`hsl(${Math.random()*360},80%,60%)`});
+  requestAnimationFrame(update);
+}
+function update(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  pieces.forEach(p=>{p.y+=p.vy;ctx.fillStyle=p.color;ctx.fillRect(p.x,p.y,p.size,p.size)});
+  pieces=pieces.filter(p=>p.y<canvas.height);
+  if(pieces.length)requestAnimationFrame(update);
+}
+</script>
+</body>
+</html>
